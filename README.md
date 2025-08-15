@@ -9,3 +9,4 @@
 | hash   | LockedMap | A sharded concurrent HashMap based on `RwLock`. |
 | hash   | RcuMap | A sharded concurrent HashMap designed using the RCU model and containing no locks. |
 | hash | FixedMap | A fixed size HashMap can be allocated at compile time. |
+| linked_list/intrusive | LinkedList | An intrusive linked list based on Rust generics and trait design. |

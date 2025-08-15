@@ -87,8 +87,8 @@ impl<T: Clone> Clone for MaybeArc<T> {
 impl<T: Display> Display for MaybeArc<T> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
-            MaybeArc::Owned(value) => write!(f, "{}", value),
-            MaybeArc::Shared(arc) => write!(f, "{}", arc),
+            MaybeArc::Owned(value) => write!(f, "{value}"),
+            MaybeArc::Shared(arc) => write!(f, "{arc}"),
         }
     }
 }
@@ -96,8 +96,8 @@ impl<T: Display> Display for MaybeArc<T> {
 impl<T: Debug> Debug for MaybeArc<T> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
-            MaybeArc::Owned(value) => write!(f, "MaybeArc::Owned({:?})", value),
-            MaybeArc::Shared(arc) => write!(f, "MaybeArc::Shared({:?})", arc),
+            MaybeArc::Owned(value) => write!(f, "MaybeArc::Owned({value:?})"),
+            MaybeArc::Shared(arc) => write!(f, "MaybeArc::Shared({arc:?})"),
         }
     }
 }

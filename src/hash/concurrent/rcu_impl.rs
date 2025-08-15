@@ -392,7 +392,7 @@ where
         loop {
             let old_arc = shard.table.load();
             if let Some(current_value) = old_arc.get(key) {
-                if Arc::ptr_eq(&current_value, &old_value) {
+                if Arc::ptr_eq(current_value, &old_value) {
                     // Perform the CAS operation
                     let new_table = old_arc.insert(key.clone(), new_value.clone());
                     let new_arc = Arc::new(new_table);

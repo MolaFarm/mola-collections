@@ -34,6 +34,15 @@ where
     _marker: core::marker::PhantomData<(K, V)>,
 }
 
+impl<K, V, M> Default for DefaultHashMap<K, V, M>
+where
+    M: RawHashMap<K, V> + Default,
+ {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<K, V, M> DefaultHashMap<K, V, M>
 where
     M: RawHashMap<K, V> + Default,

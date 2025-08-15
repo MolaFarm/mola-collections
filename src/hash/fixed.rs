@@ -1,4 +1,4 @@
-use core::hash::{BuildHasher, Hash, Hasher};
+use core::hash::{BuildHasher, Hash};
 use hashbrown::DefaultHashBuilder;
 
 enum Bucket<K, V> {
@@ -14,6 +14,15 @@ where
     buckets: [Bucket<K, V>; CAP],
     len: usize,
     hasher_builder: S,
+}
+
+impl<K, V, const CAP: usize> Default for FixedMap<K, V, CAP>
+where
+    K: Eq + Hash,
+ {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<K, V, const CAP: usize> FixedMap<K, V, CAP>
@@ -36,9 +45,9 @@ where
     S: BuildHasher,
 {
     fn hash_index(&self, key: &K) -> usize {
-        let mut h = self.hasher_builder.build_hasher();
-        key.hash(&mut h);
-        (h.finish() as usize) & (CAP - 1)
+        
+        
+        (self.hasher_builder.hash_one(key) as usize) & (CAP - 1)
     }
 
     pub fn insert(&mut self, key: K, value: V) -> Option<V> {

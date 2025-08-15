@@ -485,6 +485,15 @@ pub struct LockedMapBuilder<S = DefaultHashBuilder> {
     hash_builder: Option<S>,
 }
 
+impl<S> Default for LockedMapBuilder<S>
+where
+    S: BuildHasher + Default + Send + Sync,
+ {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<S> LockedMapBuilder<S>
 where
     S: BuildHasher + Default + Send + Sync,
@@ -555,7 +564,7 @@ where
         LockedMap::with_shards_and_capacity_and_hasher(
             self.shards,
             self.capacity,
-            self.hash_builder.unwrap_or(Default::default()),
+            self.hash_builder.unwrap_or_default(),
         )
     }
 }
