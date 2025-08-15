@@ -428,17 +428,20 @@ where
         K: Borrow<Q>,
         Q: ?Sized + Eq + Hash,
     {
-        self.view(key, |k, v| {
-            // Create a mutable guard that allows in-place modification
-            let value_arc = Arc::new(v.clone());
-            let value = v.clone();
-            Mutable {
-                map: self,
-                key: k.clone(),
-                value_arc,
-                value,
-            }
-        })
+        let shard = self.shard_for_key(key);
+        let table_arc = shard.table.load_full();
+        table_arc
+            .get_key_value(key)
+            .map(|(k, v)| {
+                let value_arc = Arc::clone(v);
+                let value = v.as_ref().clone();
+                Mutable {
+                    map: self,
+                    key: k.clone(),
+                    value_arc,
+                    value,
+                }
+            })
     }
 }
 
