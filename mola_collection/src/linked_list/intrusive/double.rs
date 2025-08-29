@@ -22,7 +22,7 @@ impl<T: Default> Default for DoubleNode<T> {
 }
 
 /// A link in a doubly linked list.
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct DoubleLink {
     next: Option<NonNull<Self>>,
     prev: Option<NonNull<Self>>,

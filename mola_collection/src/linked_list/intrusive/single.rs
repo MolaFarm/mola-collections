@@ -22,7 +22,7 @@ impl<T: Default> Default for SingleNode<T> {
 }
 
 /// A link in a singly linked list.
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct SingleLink {
     next: Option<NonNull<Self>>,
 }
