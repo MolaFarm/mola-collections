@@ -1,19 +1,11 @@
-[package]
-name = "mola-collections"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+members = [
+    "mola_collection",
+    "mola_collection_derive",
+]
+resolver = "2"
 
-[dependencies]
-arc-swap = "1.7.1"
-crossbeam-utils = { version = "0.8.21", default-features = false }
-hashbrown = "0.15.4"
-rpds = { version = "1.1.1", default-features = false }
-spin = "0.10.0"
-
-[dev-dependencies]
-criterion = { version = "0.6.0", features = ["html_reports"] }
-rand = "0.9.1"
-
-[[bench]]
-name = "hashmap_benches"
-harness = false
+[workspace.dependencies]
+proc-macro2 = { version = "1.0.101", default-features = false }
+quote = { version = "1.0.40", default-features = false }
+syn = { version = "2.0.106", default-features = false }

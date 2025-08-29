@@ -4,7 +4,7 @@ use super::traits::{List, Node};
 
 /// An iterator over a linked list.
 pub struct LinkedListIter<'a, T: Node, L: List> {
-    list: &'a L,
+    _list: &'a L,
     current: Option<NonNull<T>>,
 }
 
@@ -21,7 +21,7 @@ where
     pub unsafe fn new(list: &'a L) -> Self {
         Self {
             current: list.head().map(|n| n.cast()),
-            list,
+            _list: list,
         }
     }
 }

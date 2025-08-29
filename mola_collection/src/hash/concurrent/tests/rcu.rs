@@ -7,7 +7,7 @@ use alloc::{
 };
 use core::sync::atomic::{AtomicBool, Ordering};
 use crossbeam_utils::thread as scoped_thread;
-use rand::{Rng, seq::SliceRandom, thread_rng};
+use rand::{rng, seq::SliceRandom, Rng};
 use std::sync::Barrier;
 use std::thread;
 use std::vec;
@@ -85,7 +85,7 @@ fn test_rcu_map_two_threads_mixed() {
     // Prepare the synchronization barrier and a shuffled list of keys
     let barrier = Arc::new(Barrier::new(2));
     let mut keys: Vec<usize> = (0..SAMPLE_SIZE).collect();
-    keys.shuffle(&mut thread_rng());
+    keys.shuffle(&mut rng());
     let keys = Arc::new(keys);
 
     // Mixed workload: 50/50 read/write ratio
@@ -102,11 +102,11 @@ fn test_rcu_map_two_threads_mixed() {
                 // Wait until both threads are ready
                 barrier.wait();
 
-                let mut rng = thread_rng();
+                let mut rng = rng();
                 // Each thread performs SAMPLE_SIZE / 2 operations
                 for i in 0..(SAMPLE_SIZE / 2) {
                     let key = &keys[i % keys.len()];
-                    if rng.gen_bool(write_ratio) {
+                    if rng.random_bool(write_ratio) {
                         // Write operation: update the value
                         map.insert(*key, format!("new_value_{}", i));
                     } else {

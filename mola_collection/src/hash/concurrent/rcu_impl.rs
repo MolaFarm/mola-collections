@@ -257,13 +257,13 @@ where
             if Arc::ptr_eq(&old_arc, &shard.table.compare_and_swap(&old_arc, new_arc)) {
                 // Success! ArcSwap handles the safe reclamation of the old Arc.
                 let old_val = old_arc.get(&key).cloned();
-                if old_val.is_none() {
+                if let Some(old_val) = old_val {
+                    // If we replaced a key, return the old value.
+                    return Some(MaybeArc::Shared(old_val));
+                } else {
                     // If it was a new key, increment the count.
                     self.storage.shard_increment(1);
                     return None;
-                } else {
-                    // If we replaced a key, return the old value.
-                    return Some(MaybeArc::Shared(old_val.unwrap()));
                 }
             } else {
                 // CAS failed, another thread won the race. Backoff and retry.

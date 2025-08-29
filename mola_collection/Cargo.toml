@@ -1,0 +1,16 @@
+[package]
+name = "mola-collections"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+arc-swap = "1.7.1"
+crossbeam-utils = { version = "0.8.21", default-features = false }
+hashbrown = "0.15.4"
+rpds = { version = "1.1.1", default-features = false }
+spin = "0.10.0"
+mola-collection-derive = { path = "../mola_collection_derive" }
+
+[dev-dependencies]
+criterion = { version = "0.6.0", features = ["html_reports"] }
+rand = "0.9.1"

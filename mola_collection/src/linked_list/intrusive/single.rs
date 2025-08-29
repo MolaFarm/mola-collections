@@ -1,9 +1,25 @@
 use core::ptr::NonNull;
 
-use super::{node::ListNode, traits::{Link, List, Node}};
+use mola_collection_derive::Node;
+
+use super::traits::{Link, List, Node};
 
 /// A node in a singly linked list.
-pub type SingleNode<T> = ListNode<SingleLink, T>;
+#[derive(Node)]
+#[node(crate_path = "crate")]
+pub struct SingleNode<T> {
+    link: SingleLink,
+    data: T,
+}
+
+impl<T: Default> Default for SingleNode<T> {
+    fn default() -> Self {
+        Self {
+            link: SingleLink::default(),
+            data: T::default(),
+        }
+    }
+}
 
 /// A link in a singly linked list.
 #[derive(Debug, Default)]
@@ -14,16 +30,19 @@ pub struct SingleLink {
 impl Link for SingleLink {
     type Target = Self;
 
+    #[inline]
     fn next(&self) -> Option<NonNull<Self>> {
         self.next
     }
 
+    #[inline]
     fn set_next(&mut self, next: Option<NonNull<Self>>) {
         self.next = next;
     }
 }
 
 impl Node for SingleLink {
+    #[inline]
     fn append_to<L>(&mut self, list: &mut L)
     where
         L: List<Target = Self>,
@@ -32,6 +51,7 @@ impl Node for SingleLink {
         list.set_next(Some(NonNull::from(self).cast()));
     }
     
+    #[inline]
     unsafe fn detach<L>(&mut self, parent: Option<&mut L>)
     where 
         L: Link<Target = Self>,

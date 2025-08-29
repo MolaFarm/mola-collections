@@ -4,7 +4,7 @@ use super::{iter::LinkedListIter, traits::{Link, LinkWithPrev, List, Node}};
 
 /// A wrapper for a link that map a `Link` to a different type.
 /// This is useful for creating a link contains extra metadata.
-pub(crate) struct LinkWrapper<'a, L, T, M>
+pub struct LinkWrapper<'a, L, T, M>
 where 
     L: Link<Target = T>,
 {

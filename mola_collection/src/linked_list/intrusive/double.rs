@@ -1,12 +1,25 @@
 use core::ptr::NonNull;
 
-use super::{
-    node::ListNode,
-    traits::{Link, LinkWithPrev, List, Node},
-};
+use mola_collection_derive::Node;
+
+use super::traits::{Link, LinkWithPrev, List, Node};
 
 /// A node in a doubly linked list.
-pub type DoubleNode<T> = ListNode<DoubleLink, T>;
+#[derive(Node)]
+#[node(crate_path = "crate")]
+pub struct DoubleNode<T> {
+    link: DoubleLink,
+    data: T,
+}
+
+impl<T: Default> Default for DoubleNode<T> {
+    fn default() -> Self {
+        Self {
+            link: DoubleLink::default(),
+            data: T::default(),
+        }
+    }
+}
 
 /// A link in a doubly linked list.
 #[derive(Default)]
@@ -18,26 +31,31 @@ pub struct DoubleLink {
 impl Link for DoubleLink {
     type Target = Self;
 
+    #[inline]
     fn next(&self) -> Option<NonNull<Self::Target>> {
         self.next
     }
 
+    #[inline]
     fn set_next(&mut self, next: Option<NonNull<Self::Target>>) {
         self.next = next;
     }
 }
 
 impl LinkWithPrev for DoubleLink {
+    #[inline]
     fn prev(&self) -> Option<NonNull<Self::Target>> {
         self.prev
     }
 
+    #[inline]
     fn set_prev(&mut self, prev: Option<NonNull<Self::Target>>) {
         self.prev = prev;
     }
 }
 
 impl Node for DoubleLink {
+    #[inline]
     fn append_to<L>(&mut self, list: &mut L)
     where
         L: List<Target = Self>,
@@ -52,6 +70,7 @@ impl Node for DoubleLink {
         list.set_next(Some(self_ptr.cast()));
     }
 
+    #[inline]
     unsafe fn detach<L>(&mut self, parent: Option<&mut L>)
     where
         L: Link<Target = Self>,

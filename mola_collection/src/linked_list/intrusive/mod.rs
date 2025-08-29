@@ -23,9 +23,12 @@ pub mod traits;
 pub mod wrapper;
 pub mod single;
 pub mod double;
-pub mod node;
 pub mod list;
 pub mod iter;
+
+pub mod derive {
+    pub use mola_collection_derive::Node;
+}
 
 #[cfg(test)]
 mod tests;
