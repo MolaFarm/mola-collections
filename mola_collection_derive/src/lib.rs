@@ -1,7 +1,9 @@
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{
-    parse::{Parse, ParseStream}, parse_macro_input, Data, DataStruct, DeriveInput, Fields, Ident, LitStr, Token, Type, TypePath
+    Data, DataStruct, DataUnion, DeriveInput, Fields, Ident, LitStr, Token, Type, TypePath,
+    parse::{Parse, ParseStream},
+    parse_macro_input,
 };
 
 struct NodeAttribute {
@@ -13,13 +15,16 @@ impl Parse for NodeAttribute {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let key: Ident = input.parse()?;
         if key != "crate_path" {
-            return Err(syn::Error::new(key.span(), "expected attribute `crate_path`"));
+            return Err(syn::Error::new(
+                key.span(),
+                "expected attribute `crate_path`",
+            ));
         }
 
         let _: Token![=] = input.parse()?;
         let value: LitStr = input.parse()?;
         let path: syn::Path = value.parse()?;
-        
+
         Ok(NodeAttribute { crate_path: path })
     }
 }
@@ -29,6 +34,7 @@ impl Parse for NodeAttribute {
 pub fn node_derive(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let struct_name = &input.ident;
+    let is_union = matches!(input.data, Data::Union(_));
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
     // Find absolute crate path
@@ -52,34 +58,37 @@ pub fn node_derive(input: TokenStream) -> TokenStream {
     let mut link_field = None;
     let mut data_field = None;
 
-    if let Data::Struct(DataStruct {
-        fields: Fields::Named(ref fields),
-        ..
-    }) = input.data
-    {
-        for field in fields.named.iter() {
-            if let Some(ident) = &field.ident {
-                match ident.to_string().as_str() {
-                    "link" => link_field = Some(field.clone()),
-                    "data" => data_field = Some(field.clone()),
-                    _ => {
-                        return syn::Error::new_spanned(
-                            ident,
-                            "Unexpected field name: expected 'link' or 'data'",
-                        )
-                        .to_compile_error()
-                        .into();
+    match input.data {
+        Data::Struct(DataStruct {
+            fields: Fields::Named(ref fields),
+            ..
+        })
+        | Data::Union(DataUnion { ref fields, .. }) => {
+            for field in fields.named.iter() {
+                if let Some(ident) = &field.ident {
+                    match ident.to_string().as_str() {
+                        "link" => link_field = Some(field.clone()),
+                        "data" => data_field = Some(field.clone()),
+                        _ => {
+                            return syn::Error::new_spanned(
+                                ident,
+                                "Unexpected field name: expected 'link' or 'data'",
+                            )
+                            .to_compile_error()
+                            .into();
+                        }
                     }
                 }
             }
         }
-    } else {
-        return syn::Error::new_spanned(
-            input,
-            "Node derive macro only supports structs with named fields",
-        )
-        .to_compile_error()
-        .into();
+        _ => {
+            return syn::Error::new_spanned(
+                input,
+                "Node derive macro only supports structs or unions with named fields",
+            )
+            .to_compile_error()
+            .into();
+        }
     };
 
     let link_field = match link_field {
@@ -117,6 +126,22 @@ pub fn node_derive(input: TokenStream) -> TokenStream {
         }
     };
 
+    let (link_ref, link_mut, data_ref, data_mut) = if is_union {
+        (
+            quote! { unsafe { &self.link } },
+            quote! { unsafe { &mut self.link } },
+            quote! { unsafe { &self.data } },
+            quote! { unsafe { &mut self.data } },
+        )
+    } else {
+        (
+            quote! { &self.link },
+            quote! { &mut self.link },
+            quote! { &self.data },
+            quote! { &mut self.data },
+        )
+    };
+
     // Generate `Node` and `Link` trait implementations
     let single_link_impl = quote! {
         impl #impl_generics #intrusive_path::traits::Link for #struct_name #ty_generics #where_clause {
@@ -124,12 +149,14 @@ pub fn node_derive(input: TokenStream) -> TokenStream {
 
             #[inline]
             fn next(&self) -> Option<::core::ptr::NonNull<Self::Target>> {
-                self.link.next().map(|n| n.cast())
+                let link = #link_ref;
+                link.next().map(|n| n.cast())
             }
 
             #[inline]
             fn set_next(&mut self, next: Option<::core::ptr::NonNull<Self::Target>>) {
-                self.link.set_next(next.map(|n| n.cast()));
+                let link = #link_mut;
+                link.set_next(next.map(|n| n.cast()));
             }
         }
 
@@ -140,8 +167,9 @@ pub fn node_derive(input: TokenStream) -> TokenStream {
                 L: #intrusive_path::traits::List<Target = Self>,
             {
                 unsafe {
+                    let link = #link_mut;
                     let mut wrapper = #intrusive_path::wrapper::ListWrapper::new(list);
-                    self.link.append_to(&mut wrapper);
+                    link.append_to(&mut wrapper);
                 }
             }
 
@@ -151,8 +179,9 @@ pub fn node_derive(input: TokenStream) -> TokenStream {
                 L: #intrusive_path::traits::Link<Target = Self>,
             {
                 unsafe {
+                    let link = #link_mut;
                     let mut parent_wrapper = parent.map(|p| #intrusive_path::wrapper::LinkWrapper::new(p));
-                    self.link.detach(parent_wrapper.as_mut());
+                    link.detach(parent_wrapper.as_mut());
                 }
             }
         }
@@ -164,12 +193,14 @@ pub fn node_derive(input: TokenStream) -> TokenStream {
             impl #impl_generics #intrusive_path::traits::LinkWithPrev for #struct_name #ty_generics #where_clause {
                 #[inline]
                 fn prev(&self) -> Option<::core::ptr::NonNull<Self>> {
-                    self.link.prev().map(|n| n.cast())
+                    let link = #link_ref;
+                    link.prev().map(|n| n.cast())
                 }
 
                 #[inline]
                 fn set_prev(&mut self, prev: Option<::core::ptr::NonNull<Self>>) {
-                    self.link.set_prev(prev.map(|n| n.cast()));
+                    let link = #link_mut;
+                    link.set_prev(prev.map(|n| n.cast()));
                 }
             }
         }
@@ -186,12 +217,12 @@ pub fn node_derive(input: TokenStream) -> TokenStream {
 
                 #[inline]
                 fn data(&self) -> &Self::Data {
-                    &self.data
+                    #data_ref
                 }
 
                 #[inline]
                 fn data_mut(&mut self) -> &mut Self::Data {
-                    &mut self.data
+                    #data_mut
                 }
             }
         }
